@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KASSEL — Costos Rutas Foráneas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root[data-theme="dark"]{
+  --bg:#0d0f14;--surface:#12151e;--card:#181c28;--card2:#1c2133;
+  --border:#252a3a;--border2:#2e3448;--text:#e8eaf2;--muted:#6b7280;--muted2:#4b5563;
+  --input-bg:#0f1219;--input-bd:#2e3448;--row-hover:rgba(255,255,255,.02);
+  --thead:#1a1f2e;--toggle-bg:#252a3a;--shadow:none;
+}
+:root[data-theme="light"]{
+  --bg:#f1f5f9;--surface:#fff;--card:#fff;--card2:#f8fafc;
+  --border:#e2e8f0;--border2:#cbd5e1;--text:#0f172a;--muted:#64748b;--muted2:#94a3b8;
+  --input-bg:#f8fafc;--input-bd:#cbd5e1;--row-hover:rgba(0,0,0,.02);
+  --thead:#f1f5f9;--toggle-bg:#e2e8f0;--shadow:0 1px 3px rgba(0,0,0,.08);
+}
+:root{
+  --qro:#3b82f6;--pue:#f97316;--met:#22c55e;--cue:#a855f7;--aca:#ef4444;--par:#f59e0b;
+  --ok-bg:#052e16;--ok-bd:#166534;--ok-fg:#4ade80;
+  --ev-bg:#1c1402;--ev-bd:#854d0e;--ev-fg:#fbbf24;
+  --no-bg:#1c0505;--no-bd:#991b1b;--no-fg:#f87171;
+  --mono:'DM Mono',monospace;--sans:'Syne',sans-serif;
+}
+[data-theme="light"]{
+  --ok-bg:#dcfce7;--ok-bd:#86efac;--ok-fg:#15803d;
+  --ev-bg:#fef9c3;--ev-bd:#fde047;--ev-fg:#a16207;
+  --no-bg:#fee2e2;--no-bd:#fca5a5;--no-fg:#b91c1c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;font-size:14px;transition:background .2s,color .2s}
+
+/* NAV */
+nav{background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.25rem;height:54px;gap:.2rem;position:sticky;top:0;z-index:300;overflow-x:auto;box-shadow:var(--shadow)}
+.logo{font-size:.95rem;font-weight:800;color:var(--text);margin-right:1.25rem;white-space:nowrap;letter-spacing:-.02em;flex-shrink:0}
+.logo em{color:#3b82f6;font-style:normal}
+.tab{padding:.3rem .8rem;border-radius:6px;border:none;cursor:pointer;font-family:var(--sans);font-size:.7rem;font-weight:700;background:transparent;color:var(--muted);transition:all .15s;white-space:nowrap}
+.tab:hover{color:var(--text);background:var(--card2)}
+.tab.active{color:#fff}
+.tab[data-t="par"].active{background:#f59e0b}
+.tab[data-t="QRO"].active{background:#3b82f6}
+.tab[data-t="PUE"].active{background:#f97316}
+.tab[data-t="MET"].active{background:#22c55e}
+.tab[data-t="CUE"].active{background:#a855f7}
+.tab[data-t="ACA"].active{background:#ef4444}
+.tab[data-t="TRA"].active{background:#06b6d4}
+.tab[data-t="res"].active{background:#374151}
+.theme-btn{margin-left:auto;flex-shrink:0;background:var(--toggle-bg);border:1px solid var(--border);border-radius:20px;padding:.3rem .75rem;cursor:pointer;font-size:.72rem;font-weight:700;color:var(--muted);transition:all .15s;white-space:nowrap}
+.theme-btn:hover{color:var(--text)}
+
+/* LAYOUT */
+main{max-width:1520px;margin:0 auto;padding:1.5rem}
+.panel{display:none}
+.panel.active{display:block;animation:fu .2s ease}
+@keyframes fu{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* TYPOGRAPHY */
+.stitle{font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:1.75rem 0 .7rem}
+.page-title{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;margin-bottom:.35rem}
+.page-sub{font-family:var(--mono);font-size:.7rem;color:var(--muted);margin-bottom:1.5rem}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;box-shadow:var(--shadow)}
+.card-title{font-family:var(--mono);font-size:.62rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:.9rem}
+
+/* INPUTS */
+input[type=number],input[type=text],select{
+  background:var(--input-bg);border:1px solid var(--input-bd);border-radius:5px;
+  color:var(--text);font-family:var(--mono);font-size:.8rem;padding:.32rem .55rem;
+  width:100%;transition:border-color .15s;outline:none}
+input[type=number]:focus,input[type=text]:focus,select:focus{border-color:#3b82f6}
+input[type=number]{text-align:right}
+input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:#3b82f6}
+
+/* PARAMS GRID */
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.pr{display:flex;align-items:center;justify-content:space-between;padding:.42rem 0;border-bottom:1px solid var(--border)}
+.pr:last-child{border-bottom:none}
+.pl{font-size:.78rem;color:var(--muted);flex:1}
+.pc{display:flex;align-items:center;gap:.35rem;min-width:125px}
+.pu{font-family:var(--mono);font-size:.68rem;color:var(--muted2);white-space:nowrap}
+
+/* DEST HEADER */
+.dh{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;gap:1rem;flex-wrap:wrap}
+.dn{font-size:1.9rem;font-weight:800;letter-spacing:-.03em;line-height:1}
+.ds{font-family:var(--mono);font-size:.68rem;color:var(--muted);margin-top:.35rem}
+
+/* SEMAFORO */
+.sb{border-radius:10px;padding:.8rem 1.15rem;text-align:center;min-width:180px;border:1px solid}
+.sbp{font-family:var(--mono);font-size:1.9rem;font-weight:800;line-height:1;margin-bottom:.15rem}
+.sbl{font-size:.8rem;font-weight:700}
+.sbs{font-size:.62rem;opacity:.7;margin-top:.12rem}
+.sb.ok{background:var(--ok-bg);color:var(--ok-fg);border-color:var(--ok-bd)}
+.sb.ev{background:var(--ev-bg);color:var(--ev-fg);border-color:var(--ev-bd)}
+.sb.no{background:var(--no-bg);color:var(--no-fg);border-color:var(--no-bd)}
+.sb.off{background:var(--card2);color:var(--muted);border-color:var(--border2)}
+
+/* STATS */
+.sr{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;margin-bottom:1.1rem}
+.st{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.9rem 1.1rem;box-shadow:var(--shadow)}
+.stl{font-family:var(--mono);font-size:.58rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem}
+.stv{font-size:1.3rem;font-weight:700;letter-spacing:-.02em}
+.sts{font-family:var(--mono);font-size:.62rem;color:var(--muted);margin-top:.18rem}
+
+/* COSTS */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1.1rem}
+.cr{display:flex;justify-content:space-between;align-items:center;padding:.42rem 0;border-bottom:1px solid var(--border)}
+.cr:last-child{border-bottom:none}
+.cn{font-size:.78rem;color:var(--muted)}
+.ca{font-family:var(--mono);font-size:.8rem;font-weight:500}
+.cr.ct{border-top:2px solid var(--border2);margin-top:.35rem;padding-top:.55rem}
+.cr.ct .cn{font-weight:700;font-size:.82rem;color:var(--text)}
+.cr.ct .ca{font-size:.95rem;font-weight:700}
+
+/* TABLE */
+.tw{overflow-x:auto;border-radius:8px;border:1px solid var(--border);margin-bottom:1.1rem;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:.76rem}
+thead tr{background:var(--thead)}
+th{padding:.55rem .75rem;text-align:left;font-family:var(--mono);font-size:.58rem;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+th.r,td.r{text-align:right}
+td{padding:.5rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle}
+td.mono{font-family:var(--mono)}
+tr:last-child td{border-bottom:none}
+tr.off td{opacity:.28}
+tr:not(.off):hover td{background:var(--row-hover)}
+td input[type=text]{width:108px}
+td input[type=number]{width:88px}
+td select{width:88px}
+
+/* TAGS */
+.tag{display:inline-block;padding:.16rem .5rem;border-radius:4px;font-family:var(--mono);font-size:.66rem;font-weight:600;white-space:nowrap}
+.tag.ok{background:var(--ok-bg);color:var(--ok-fg)}
+.tag.ev{background:var(--ev-bg);color:var(--ev-fg)}
+.tag.no{background:var(--no-bg);color:var(--no-fg)}
+.tag.off{background:var(--card2);color:var(--muted)}
+.tag.cyan{background:#083344;color:#67e8f9}
+[data-theme="light"] .tag.cyan{background:#cffafe;color:#0e7490}
+
+/* BANNER */
+.ban{border-radius:8px;padding:.9rem 1.15rem;font-weight:700;margin-bottom:1.1rem;text-align:center}
+.ban.ok{background:var(--ok-bg);color:var(--ok-fg);border:1px solid var(--ok-bd)}
+.ban.ev{background:var(--ev-bg);color:var(--ev-fg);border:1px solid var(--ev-bd)}
+.ban.no{background:var(--no-bg);color:var(--no-fg);border:1px solid var(--no-bd)}
+.ban.off{background:var(--card2);color:var(--muted);border:1px solid var(--border2)}
+.ban .bp{font-family:var(--mono);font-size:1.5rem;font-weight:800;display:block;margin-bottom:.12rem}
+
+/* SENSITIVITY */
+.sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:.55rem;margin-bottom:1.5rem}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.8rem;text-align:center;transition:border-color .2s;box-shadow:var(--shadow)}
+.sc.cur{border-width:2px}
+.sn{font-family:var(--mono);font-size:.58rem;color:var(--muted);margin-bottom:.28rem}
+.sv{font-size:.95rem;font-weight:700;letter-spacing:-.02em}
+.ss{font-family:var(--mono);font-size:.58rem;color:var(--ok-fg);margin-top:.18rem}
+
+/* COMPARATIVA */
+.comp-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-bottom:1.1rem}
+.comp-card{border-radius:10px;padding:1.1rem;border:2px solid}
+.comp-card.kassel{border-color:#3b82f6;background:rgba(59,130,246,.06)}
+.comp-card.tramusa{border-color:#06b6d4;background:rgba(6,182,212,.06)}
+[data-theme="light"] .comp-card.kassel{background:rgba(59,130,246,.05)}
+[data-theme="light"] .comp-card.tramusa{background:rgba(6,182,212,.05)}
+.comp-brand{font-size:1rem;font-weight:800;letter-spacing:-.02em;margin-bottom:.75rem}
+.comp-total{font-size:1.6rem;font-weight:800;letter-spacing:-.03em;margin:0.5rem 0}
+.comp-winner{display:inline-block;padding:.3rem .8rem;border-radius:6px;font-size:.75rem;font-weight:700;margin-top:.5rem}
+.comp-winner.kassel{background:#1d3461;color:#93c5fd}
+.comp-winner.tramusa{background:#083344;color:#67e8f9}
+.comp-winner.equal{background:var(--card2);color:var(--muted)}
+[data-theme="light"] .comp-winner.kassel{background:#dbeafe;color:#1d4ed8}
+[data-theme="light"] .comp-winner.tramusa{background:#cffafe;color:#0e7490}
+
+/* RESUMEN */
+.rg{display:grid;grid-template-columns:repeat(5,1fr);gap:.7rem;margin-bottom:1.5rem}
+.rc{border-radius:10px;padding:1.1rem;border:1px solid var(--border);display:flex;flex-direction:column;gap:.38rem;box-shadow:var(--shadow)}
+.rd{font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.rv{font-size:1.3rem;font-weight:800;letter-spacing:-.03em}
+.rsub{font-family:var(--mono);font-size:.62rem;color:var(--muted)}
+
+/* BAR */
+.bc{display:flex;flex-direction:column;gap:.5rem}
+.br{display:flex;align-items:center;gap:.7rem}
+.bl{font-family:var(--mono);font-size:.65rem;color:var(--muted);width:95px;text-align:right;flex-shrink:0}
+.bt{flex:1;background:var(--border);border-radius:4px;height:22px;overflow:hidden}
+.bf{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:.45rem;transition:width .7s cubic-bezier(.4,0,.2,1);min-width:2px}
+.bf span{font-family:var(--mono);font-size:.65rem;font-weight:600;color:#fff;white-space:nowrap}
+.bpct{font-family:var(--mono);font-size:.65rem;width:48px;flex-shrink:0}
+
+/* TRAMUSA PANEL */
+.tra-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+
+/* INFO BOX */
+.ibox{border-radius:8px;padding:.7rem 1rem;font-size:.78rem;margin-bottom:1.1rem;border:1px solid}
+.ibox.info{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.3);color:#93c5fd}
+.ibox.warn{background:var(--ev-bg);border-color:var(--ev-bd);color:var(--ev-fg)}
+[data-theme="light"] .ibox.info{background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8}
+[data-theme="light"] .ibox.warn{background:#fefce8;border-color:#fef08a;color:#a16207}
+
+/* SAC highlight */
+.sac-val{font-family:var(--mono);font-size:.78rem;font-weight:600;color:#06b6d4}
+
+@media(max-width:1024px){.pg{grid-template-columns:1fr 1fr}.rg{grid-template-columns:1fr 1fr}.sr{grid-template-columns:1fr 1fr}.cg{grid-template-columns:1fr}.comp-grid{grid-template-columns:1fr}}
+@media(max-width:640px){.pg{grid-template-columns:1fr}.rg{grid-template-columns:1fr}.sr{grid-template-columns:1fr 1fr}.tra-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">KASSEl<em>.</em>MX</div>
+  <button class="tab" data-t="par">⚙️ Parámetros</button>
+  <button class="tab active" data-t="QRO">🔵 Querétaro</button>
+  <button class="tab" data-t="PUE">🟠 Puebla</button>
+  <button class="tab" data-t="MET">🟢 Metepec</button>
+  <button class="tab" data-t="CUE">🟣 Cuernavaca</button>
+  <button class="tab" data-t="ACA">🔴 Acapulco</button>
+  <button class="tab" data-t="TRA">🚛 TRAMUSA</button>
+  <button class="tab" data-t="res">📊 Resumen</button>
+  <button class="theme-btn" id="theme-btn">☀️ Modo claro</button>
+</nav>
+<main>
+
+<!-- ══════ PARÁMETROS ══════ -->
+<div class="panel" id="panel-par">
+  <div class="page-title">Parámetros Generales</div>
+  <div class="page-sub">Edita los valores — todo se recalcula automáticamente en tiempo real</div>
+  <div class="pg">
+    <div class="card">
+      <div class="card-title">🛢️ Diesel</div>
+      <div class="pr"><span class="pl">Precio por litro</span><div class="pc"><input type="number" id="p-diesel" value="28" min="0" step="0.5"><span class="pu">$/L</span></div></div>
+      <div class="pr"><span class="pl">Rendimiento del camión</span><div class="pc"><input type="number" id="p-rend" value="8" min="1" step="0.1"><span class="pu">km/L</span></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">👷 Personal</div>
+      <div class="pr"><span class="pl">Sueldo chofer / día</span><div class="pc"><input type="number" id="p-chofer" value="504" min="0" step="10"><span class="pu">$/día</span></div></div>
+      <div class="pr"><span class="pl">Sueldo ayudante 1 / día</span><div class="pc"><input type="number" id="p-ay1" value="400" min="0" step="10"><span class="pu">$/día</span></div></div>
+      <div class="pr"><span class="pl">Sueldo ayudante 2 / día</span><div class="pc"><input type="number" id="p-ay2" value="400" min="0" step="10"><span class="pu">$/día</span></div></div>
+      <div class="pr"><span class="pl">IMSS + prestaciones (factor)</span><div class="pc"><input type="number" id="p-imss" value="0.35" min="0" max="2" step="0.01"><span class="pu">×</span></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🚛 Deterioro del Camión</div>
+      <div class="pr"><span class="pl">Valor del camión</span><div class="pc"><input type="number" id="p-valor" value="890000" min="0" step="1000"><span class="pu">$</span></div></div>
+      <div class="pr"><span class="pl">Vida útil estimada</span><div class="pc"><input type="number" id="p-vida" value="600000" min="1" step="10000"><span class="pu">km</span></div></div>
+      <div class="pr"><span class="pl">Llantas / km</span><div class="pc"><input type="number" id="p-llantas" value="0.03" min="0" step="0.01"><span class="pu">$/km</span></div></div>
+      <div class="pr"><span class="pl">Aceite + filtros / km</span><div class="pc"><input type="number" id="p-aceite" value="0.2125" min="0" step="0.0001"><span class="pu">$/km</span></div></div>
+      <div class="pr"><span class="pl">Reparaciones / km</span><div class="pc"><input type="number" id="p-repara" value="0.35" min="0" step="0.01"><span class="pu">$/km</span></div></div>
+      <div class="pr"><span class="pl">Seguros y tenencia (anual)</span><div class="pc"><input type="number" id="p-seguros" value="35583" min="0" step="100"><span class="pu">$/año</span></div></div>
+      <div class="pr"><span class="pl">Días laborables al año</span><div class="pc"><input type="number" id="p-dias" value="250" min="1" step="1"><span class="pu">días</span></div></div>
+      <div class="pr"><span class="pl">Km promedio por día</span><div class="pc"><input type="number" id="p-kmpdia" value="79" min="1" step="1"><span class="pu">km/día</span></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 SAC Foráneo (por monto de pedido)</div>
+      <div class="ibox info" style="margin-bottom:.75rem;font-size:.75rem">El SAC se asigna automáticamente según el monto de cada pedido individual</div>
+      <div class="pr"><span class="pl">Hasta $10,000</span><div class="pc"><input type="number" id="sac-1" value="499" min="0" step="1"><span class="pu">$</span></div></div>
+      <div class="pr"><span class="pl">$10,001 – $20,000</span><div class="pc"><input type="number" id="sac-2" value="599" min="0" step="1"><span class="pu">$</span></div></div>
+      <div class="pr"><span class="pl">$20,001 – $60,000</span><div class="pc"><input type="number" id="sac-3" value="699" min="0" step="1"><span class="pu">$</span></div></div>
+      <div class="pr"><span class="pl">$60,001 – $80,000</span><div class="pc"><input type="number" id="sac-4" value="799" min="0" step="1"><span class="pu">$</span></div></div>
+      <div class="pr"><span class="pl">Mayor a $80,000</span><div class="pc"><input type="number" id="sac-5" value="899" min="0" step="1"><span class="pu">$</span></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏘️ Viáticos y Análisis</div>
+      <div class="pr"><span class="pl">Viáticos (base global)</span><div class="pc"><input type="number" id="p-viaticos" value="800" min="0" step="50"><span class="pu">$</span></div></div>
+      <div class="pr" style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid var(--border2)"><span class="pl" style="font-size:.72rem;color:var(--muted2)">Cada destino puede tener viáticos propios (editables en su pestaña)</span></div>
+      <div class="pr"><span class="pl">Umbral ÓPTIMO (≤)</span><div class="pc"><input type="number" id="p-umbral1" value="5" min="0" max="100" step="0.5"><span class="pu">%</span></div></div>
+      <div class="pr"><span class="pl">Umbral MÁXIMO (≤)</span><div class="pc"><input type="number" id="p-umbral2" value="9" min="0" max="100" step="0.5"><span class="pu">%</span></div></div>
+      <div class="pr"><span class="pl">Costo extra KASSEL por piso &gt;3</span><div class="pc"><input type="number" id="p-piso" value="500" min="0" step="100"><span class="pu">$/piso</span></div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🛣️ Casetas por Destino (ida+vuelta)</div>
+      <div class="pr"><span class="pl">🔵 Querétaro</span><div class="pc"><input type="number" id="cas-QRO" value="994" min="0" step="10"><span class="pu">$</span></div></div>
+      <div class="pr"><span class="pl">🟠 Puebla</span><div class="pc"><input type="number" id="cas-PUE" value="904" min="0" step="10"><span class="pu">$</span></div></div>
+      <div class="pr"><span class="pl">🟢 Metepec</span><div class="pc"><input type="number" id="cas-MET" value="180" min="0" step="10"><span class="pu">$</span></div></div>
+      <div class="pr"><span class="pl">🟣 Cuernavaca</span><div class="pc"><input type="number" id="cas-CUE" value="440" min="0" step="10"><span class="pu">$</span></div></div>
+      <div class="pr"><span class="pl">🔴 Acapulco</span><div class="pc"><input type="number" id="cas-ACA" value="8666" min="0" step="10"><span class="pu">$</span></div></div>
+      <div style="margin-top:1rem">
+        <div class="card-title">🚦 Semáforo</div>
+        <div style="display:flex;flex-direction:column;gap:.5rem">
+          <div style="background:var(--ok-bg);border:1px solid var(--ok-bd);border-radius:6px;padding:.55rem .8rem"><span style="color:var(--ok-fg);font-weight:700;font-size:.8rem">✅ ÓPTIMO</span><span style="color:var(--ok-fg);font-size:.72rem;opacity:.8;margin-left:.5rem">≤ umbral 1</span></div>
+          <div style="background:var(--ev-bg);border:1px solid var(--ev-bd);border-radius:6px;padding:.55rem .8rem"><span style="color:var(--ev-fg);font-weight:700;font-size:.8rem">⚠️ EVALUAR</span><span style="color:var(--ev-fg);font-size:.72rem;opacity:.8;margin-left:.5rem">entre umbral 1 y 2</span></div>
+          <div style="background:var(--no-bg);border:1px solid var(--no-bd);border-radius:6px;padding:.55rem .8rem"><span style="color:var(--no-fg);font-weight:700;font-size:.8rem">❌ NO CONVIENE</span><span style="color:var(--no-fg);font-size:.72rem;opacity:.8;margin-left:.5rem">&gt; umbral 2</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DEST PANELS (JS) -->
+<div class="panel active" id="panel-QRO"></div>
+<div class="panel" id="panel-PUE"></div>
+<div class="panel" id="panel-MET"></div>
+<div class="panel" id="panel-CUE"></div>
+<div class="panel" id="panel-ACA"></div>
+
+<!-- TRAMUSA PANEL -->
+<div class="panel" id="panel-TRA">
+  <div class="page-title" style="color:#06b6d4">🚛 TRAMUSA — Tabla de Tarifas</div>
+  <div class="page-sub">Porcentaje aplicado sobre el valor total de mercancía del destino</div>
+  <div class="ibox info">Los porcentajes se aplican sobre el <strong>total de mercancía del destino completo</strong>. Ej: si hay 2 pedidos Acapulco de $5,000 y $4,000 → se aplica el % sobre $9,000.</div>
+  <div class="tra-grid">
+    <div class="card">
+      <div class="card-title">📍 Zonas y Porcentajes TRAMUSA</div>
+      <table>
+        <thead><tr><th>Destinos</th><th class="r">% Flete</th></tr></thead>
+        <tbody>
+          <tr><td style="font-size:.72rem">SLP, Morelia, Uruapan, Zacapu, Zamora, Zitácuaro, Guanajuato, <strong>Querétaro</strong>, Guadalajara, Irapuato, Cuautla, <strong>Cuernavaca</strong>, Tixtla, <strong>Acapulco</strong>, Tihuatlán, Pozarica, Tuxpan, Tampico, Ixtlahuacán, Jal. AGS</td><td class="r mono" style="font-weight:700;color:#06b6d4;white-space:nowrap">12%</td></tr>
+          <tr style="background:var(--card2)"><td style="font-size:.72rem">Chihuahua, Reynosa, Matamoros, Río Bravo, Villahermosa, Campeche, Mérida, Cancún, Playa del Carmen, Comitán, San Cristóbal, Tapachula, Los Mochis, Culiacán</td><td class="r mono" style="font-weight:700;color:#06b6d4;white-space:nowrap">16%</td></tr>
+          <tr><td style="font-size:.72rem">Cd. Acuña, Piedras Negras, Monclova, Cuatro Ciénegas, Nueva Rosita, Sabinas Coah., Nogales Son., Cd. Juárez, Casas Grandes, Jiménez, Hermosillo, Cd. Obregón, Tijuana, Ensenada, Sabinas NL, Nuevo Laredo</td><td class="r mono" style="font-weight:700;color:#06b6d4;white-space:nowrap">22%</td></tr>
+          <tr style="background:var(--card2)"><td style="font-size:.72rem">Mazatlán, Nayarit, Colima, Tuxtla Gutiérrez, Monterrey, Puerto Vallarta, Colotepec Oax., Bahía de Huatulco</td><td class="r mono" style="font-weight:700;color:#06b6d4;white-space:nowrap">16%</td></tr>
+          <tr><td style="font-size:.72rem">Coyuca de Benítez, Ixtapa, Lázaro Cárdenas, Oaxaca, Minatitlán, Coatzacoalcos, San Andrés Tuxtla, Durango, Torreón, Saltillo, Zacatecas</td><td class="r mono" style="font-weight:700;color:#06b6d4;white-space:nowrap">14%</td></tr>
+          <tr style="background:var(--card2)"><td style="font-size:.72rem"><strong>Puebla</strong>, Tlaxcala, Veracruz, Boca del Río, Córdoba, Xalapa, Pachuca, Nogales Ver., Tepeapulco, <strong>Tulancingo (Hgo.)</strong>, <strong>Metepec/Toluca</strong></td><td class="r mono" style="font-weight:700;color:#06b6d4;white-space:nowrap">11%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 % por Destino (editable)</div>
+      <div class="ibox warn" style="margin-bottom:.75rem;font-size:.74rem">Estos % se usan en la comparativa KASSEL vs TRAMUSA de cada pestaña. Modifica si hay actualización de tarifas.</div>
+      <div class="pr"><span class="pl">🔵 Querétaro</span><div class="pc"><input type="number" id="tra-QRO" value="12" min="0" max="100" step="0.5"><span class="pu">%</span></div></div>
+      <div class="pr"><span class="pl">🟠 Puebla</span><div class="pc"><input type="number" id="tra-PUE" value="11" min="0" max="100" step="0.5"><span class="pu">%</span></div></div>
+      <div class="pr"><span class="pl">🟢 Metepec</span><div class="pc"><input type="number" id="tra-MET" value="11" min="0" max="100" step="0.5"><span class="pu">%</span></div></div>
+      <div class="pr"><span class="pl">🟣 Cuernavaca</span><div class="pc"><input type="number" id="tra-CUE" value="12" min="0" max="100" step="0.5"><span class="pu">%</span></div></div>
+      <div class="pr"><span class="pl">🔴 Acapulco</span><div class="pc"><input type="number" id="tra-ACA" value="12" min="0" max="100" step="0.5"><span class="pu">%</span></div></div>
+      <div style="margin-top:1rem;padding-top:.75rem;border-top:1px solid var(--border)">
+        <div class="card-title">🏢 Cobro por Pisos TRAMUSA</div>
+        <div class="pr"><span class="pl">Costo por piso adicional al 3°</span><div class="pc"><input type="number" id="tra-piso" value="500" min="0" step="100"><span class="pu">$/piso</span></div></div>
+        <div class="ibox info" style="margin-top:.75rem;font-size:.73rem"><strong>KASSEL siempre asume el costo de subir pisos</strong> sin importar cuántos sean — nunca cobra esto al cliente. Cuando se envía por <strong>TRAMUSA</strong>, KASSEL cubre hasta el 3er piso; del 4° piso en adelante el cargo de $500/piso adicional se traslada al cliente.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESUMEN -->
+<div class="panel" id="panel-res">
+  <div class="page-title">Resumen Comparativo</div>
+  <div class="page-sub">Todas las rutas — actualización en tiempo real</div>
+  <div class="stitle">Resultado por destino</div>
+  <div class="rg" id="res-cards"></div>
+  <div class="stitle">% Costo / Mercancía</div>
+  <div class="card" style="margin-bottom:1.5rem"><div class="bc" id="res-bars"></div></div>
+  <div class="stitle">Parámetros activos</div>
+  <div id="res-params" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem"></div>
+</div>
+
+</main>
+<script>
+// ══════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════
+const themeBtn=document.getElementById('theme-btn');
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  themeBtn.textContent=t==='dark'?'☀️ Modo claro':'🌙 Modo oscuro';
+  localStorage.setItem('theme',t);
+}
+themeBtn.addEventListener('click',()=>setTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'));
+setTheme(localStorage.getItem('theme')||'dark');
+
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+const DESTS={
+  QRO:{name:'Querétaro',color:'#3b82f6',bg:'#0c1528',bgl:'#eff6ff',bd:'#1d3461',bdl:'#bfdbfe',emoji:'🔵',kmV:220,viat:800,
+    peds:[{n:'QRO12849',a:true,km:40.2,m:97324,piso:0},{n:'QRO12878',a:false,km:18.5,m:0,piso:0},
+          {n:'QRO12962',a:false,km:1.1,m:0,piso:0},{n:'QRO12733',a:false,km:1,m:0,piso:0},
+          {n:'QRO12959',a:false,km:5.9,m:0,piso:0},{n:'QRO12958',a:false,km:4,m:0,piso:0},
+          {n:'Ped 7',a:false,km:0,m:0,piso:0},{n:'Ped 8',a:false,km:0,m:0,piso:0},
+          {n:'Ped 9',a:false,km:0,m:0,piso:0},{n:'Ped 10',a:false,km:0,m:0,piso:0},
+          {n:'Ped 11',a:false,km:0,m:0,piso:0},{n:'Ped 12',a:false,km:0,m:0,piso:0}]},
+  PUE:{name:'Puebla',color:'#f97316',bg:'#180e05',bgl:'#fff7ed',bd:'#3d2009',bdl:'#fed7aa',emoji:'🟠',kmV:185,viat:800,
+    peds:[{n:'OPU1039',a:true,km:148,m:22598,piso:0},{n:'Pedido 2',a:true,km:63.6,m:40694,piso:0},
+          {n:'Ped 3',a:false,km:0,m:0,piso:0},{n:'Ped 4',a:false,km:0,m:0,piso:0},
+          {n:'Ped 5',a:false,km:0,m:0,piso:0},{n:'Ped 6',a:false,km:0,m:0,piso:0},
+          {n:'Ped 7',a:false,km:0,m:0,piso:0},{n:'Ped 8',a:false,km:0,m:0,piso:0},
+          {n:'Ped 9',a:false,km:0,m:0,piso:0},{n:'Ped 10',a:false,km:0,m:0,piso:0},
+          {n:'Ped 11',a:false,km:0,m:0,piso:0},{n:'Ped 12',a:false,km:0,m:0,piso:0}]},
+  MET:{name:'Metepec',color:'#22c55e',bg:'#051409',bgl:'#f0fdf4',bd:'#0d3318',bdl:'#bbf7d0',emoji:'🟢',kmV:105,viat:800,
+    peds:[{n:'MET10987',a:true,km:105,m:69500,piso:0},{n:'POL22499',a:false,km:0,m:0,piso:0},
+          {n:'Ped 3',a:false,km:0,m:0,piso:0},{n:'Ped 4',a:false,km:0,m:0,piso:0},
+          {n:'Ped 5',a:false,km:0,m:0,piso:0},{n:'Ped 6',a:false,km:0,m:0,piso:0},
+          {n:'Ped 7',a:false,km:0,m:0,piso:0},{n:'Ped 8',a:false,km:0,m:0,piso:0},
+          {n:'Ped 9',a:false,km:0,m:0,piso:0},{n:'Ped 10',a:false,km:0,m:0,piso:0},
+          {n:'Ped 11',a:false,km:0,m:0,piso:0},{n:'Ped 12',a:false,km:0,m:0,piso:0}]},
+  CUE:{name:'Cuernavaca',color:'#a855f7',bg:'#100516',bgl:'#faf5ff',bd:'#2d0d40',bdl:'#e9d5ff',emoji:'🟣',kmV:145,viat:800,
+    peds:[{n:'Pedido 1',a:true,km:145,m:40000,piso:0},{n:'Ped 2',a:false,km:0,m:0,piso:0},
+          {n:'Ped 3',a:false,km:0,m:0,piso:0},{n:'Ped 4',a:false,km:0,m:0,piso:0},
+          {n:'Ped 5',a:false,km:0,m:0,piso:0},{n:'Ped 6',a:false,km:0,m:0,piso:0},
+          {n:'Ped 7',a:false,km:0,m:0,piso:0},{n:'Ped 8',a:false,km:0,m:0,piso:0},
+          {n:'Ped 9',a:false,km:0,m:0,piso:0},{n:'Ped 10',a:false,km:0,m:0,piso:0},
+          {n:'Ped 11',a:false,km:0,m:0,piso:0},{n:'Ped 12',a:false,km:0,m:0,piso:0}]},
+  ACA:{name:'Acapulco',color:'#ef4444',bg:'#150505',bgl:'#fef2f2',bd:'#3d0d0d',bdl:'#fecaca',emoji:'🔴',kmV:417,viat:800,
+    peds:[{n:'FOR1521',a:true,km:301,m:37380,piso:0},{n:'CD1291',a:true,km:106,m:3930,piso:0},
+          {n:'FOR1500',a:true,km:0.7,m:64813.69,piso:0},{n:'FOR1509',a:true,km:21,m:45154,piso:0},
+          {n:'Ped 5',a:false,km:0,m:0,piso:0},{n:'Ped 6',a:false,km:0,m:0,piso:0},
+          {n:'Ped 7',a:false,km:0,m:0,piso:0},{n:'Ped 8',a:false,km:0,m:0,piso:0},
+          {n:'Ped 9',a:false,km:0,m:0,piso:0},{n:'Ped 10',a:false,km:0,m:0,piso:0},
+          {n:'Ped 11',a:false,km:0,m:0,piso:0},{n:'Ped 12',a:false,km:0,m:0,piso:0}]}
+};
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+const $=id=>document.getElementById(id);
+const pn=id=>parseFloat($(id).value)||0;
+const fmt=n=>'$'+(+n).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtN=n=>(+n).toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1});
+const isDark=()=>document.documentElement.getAttribute('data-theme')==='dark';
+
+function getSAC(merc){
+  const s1=pn('sac-1'),s2=pn('sac-2'),s3=pn('sac-3'),s4=pn('sac-4'),s5=pn('sac-5');
+  if(merc<=0)return 0;
+  if(merc<=10000)return s1;
+  if(merc<=20000)return s2;
+  if(merc<=60000)return s3;
+  if(merc<=80000)return s4;
+  return s5;
+}
+function gp(){
+  return{diesel:pn('p-diesel'),rend:pn('p-rend'),chofer:pn('p-chofer'),ay1:pn('p-ay1'),
+    ay2:pn('p-ay2'),imss:pn('p-imss'),valor:pn('p-valor'),vida:pn('p-vida'),
+    llantas:pn('p-llantas'),aceite:pn('p-aceite'),repara:pn('p-repara'),
+    seguros:pn('p-seguros'),dias:pn('p-dias'),kmpdia:pn('p-kmpdia'),
+    viaticos:pn('p-viaticos'),u1:pn('p-umbral1'),u2:pn('p-umbral2'),piso:pn('p-piso')};
+}
+function calcPers(p){return(p.chofer+p.ay1+p.ay2)*(1+p.imss);}
+function calcDetr(p,km){return km*(p.valor/p.vida+p.llantas+p.aceite+p.repara+p.seguros/(p.dias*p.kmpdia));}
+function semCls(pct,u1,u2){return pct<=u1?'ok':pct<=u2?'ev':'no';}
+function semTxt(cls){return cls==='ok'?'✅ ÓPTIMO':cls==='ev'?'⚠️ EVALUAR':'❌ NO CONVIENE';}
+
+function compute(k){
+  const p=gp(), d=DESTS[k];
+  const cas=pn('cas-'+k);
+  const viat=parseFloat($('viat-'+k)?$('viat-'+k).value:p.viaticos)||p.viaticos;
+  const kmV=parseFloat($('kmv-'+k)?$('kmv-'+k).value:d.kmV)||0;
+  const peds=d.peds.map((_,i)=>({
+    act:$('chk-'+k+i)?$('chk-'+k+i).checked:false,
+    nom:$('nom-'+k+i)?$('nom-'+k+i).value:'',
+    km:parseFloat($('km-'+k+i)?$('km-'+k+i).value:0)||0,
+    merc:parseFloat($('merc-'+k+i)?$('merc-'+k+i).value:0)||0,
+    piso:parseInt($('piso-'+k+i)?$('piso-'+k+i).value:1)||1
+  }));
+  const active=peds.filter(x=>x.act);
+  const n=active.length;
+  const kmTotal=peds.reduce((s,x)=>s+x.km,0)+kmV;
+  const personal=calcPers(p);
+  const deterioro=calcDetr(p,kmTotal);
+  let ri=0;
+  const pedRes=peds.map(ped=>{
+    if(!ped.act)return null;
+    const sac=getSAC(ped.merc);
+    const dsl=ped.km/p.rend*p.diesel;
+    const fijoProp=n>0?(personal+deterioro+cas+viat)/n:0;
+    const total=dsl+fijoProp;
+    const totalConSAC=total+sac;
+    const pctMerc=ped.merc>0?total/ped.merc:null;
+    const pisoCost=Math.max(0,ped.piso-3)*p.piso; // only for TRAMUSA display
+    return{nom:ped.nom,km:ped.km,merc:ped.merc,sac,pisoCost,piso:ped.piso,diesel:dsl,
+           personal:personal/n,deterioro:deterioro/n,casetas:cas/n,
+           viaticos:viat/n,total,totalConSAC,pctMerc};
+  }).filter(Boolean);
+  const costoRuta=pedRes.reduce((s,x)=>s+x.total,0);
+  const sacTotal=pedRes.reduce((s,x)=>s+x.sac,0);
+  const mercTotal=active.reduce((s,x)=>s+x.merc,0);
+  const pctRuta=mercTotal>0?costoRuta/mercTotal:null;
+  // TRAMUSA
+  const traPct=pn('tra-'+k)/100;
+  const traCosto=mercTotal*traPct;
+  return{p,cas,viat,kmTotal,kmV,peds,active,n,personal,deterioro,
+         pedRes,costoRuta,sacTotal,mercTotal,pctRuta,traPct,traCosto};
+}
+
+// ══════════════════════════════════════════
+// BUILD PANEL
+// ══════════════════════════════════════════
+function buildPanel(k){
+  const d=DESTS[k];
+  const rows=d.peds.map((ped,i)=>`
+    <tr id="tr-${k}${i}">
+      <td class="mono" style="color:var(--muted)">P${i+1}</td>
+      <td><input type="text" id="nom-${k}${i}" value="${ped.n}"></td>
+      <td style="text-align:center"><input type="checkbox" id="chk-${k}${i}" ${ped.a?'checked':''}></td>
+      <td class="r"><input type="number" id="km-${k}${i}" value="${ped.km}" min="0" step="0.1"></td>
+      <td class="r"><input type="number" id="merc-${k}${i}" value="${ped.m}" min="0" step="100"></td>
+      <td class="r mono sac-val" id="sac-v-${k}${i}">—</td>
+      <td class="r mono" id="tot-v-${k}${i}">—</td>
+      <td class="r" style="text-align:center">
+        <select id="piso-${k}${i}">
+          <option value="1">PB/1°</option><option value="2">2°</option><option value="3">3°</option>
+          <option value="4">4°</option><option value="5">5°</option><option value="6">6°</option>
+          <option value="7">7°</option><option value="8">8°</option><option value="9">9°</option>
+          <option value="10">10°</option><option value="11">11°</option><option value="12">12°</option>
+          <option value="13">13°</option><option value="14">14°</option><option value="15">15°</option>
+          <option value="16">16°</option><option value="17">17°</option><option value="18">18°</option>
+          <option value="19">19°</option><option value="20">20°</option>
+        </select>
+      </td>
+      <td class="r mono" id="cp-${k}${i}">—</td>
+      <td class="r mono" id="pp-${k}${i}">—</td>
+      <td id="ps-${k}${i}"><span class="tag off">—</span></td>
+    </tr>`).join('');
+
+  $('panel-'+k).innerHTML=`
+    <div class="dh">
+      <div>
+        <div class="dn" style="color:${d.color}">${d.name}</div>
+        <div class="ds" id="sub-${k}">Cargando...</div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start;flex-wrap:wrap">
+        <div>
+          <div style="font-family:var(--mono);font-size:.6rem;color:var(--muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.06em">Viáticos del destino</div>
+          <div style="display:flex;align-items:center;gap:.4rem">
+            <input type="number" id="viat-${k}" value="${d.viat}" min="0" step="50" style="width:95px">
+            <span style="font-family:var(--mono);font-size:.7rem;color:var(--muted)">$</span>
+          </div>
+        </div>
+        <div class="sb off" id="sbig-${k}">
+          <div class="sbp" id="spct-${k}">—</div>
+          <div class="sbl" id="slbl-${k}">—</div>
+          <div class="sbs">% Costo / Mercancía (ruta)</div>
+        </div>
+      </div>
+    </div>
+    <div class="sr">
+      <div class="st"><div class="stl">Costo Total Ruta</div><div class="stv" id="sc-${k}">—</div><div class="sts">sin SAC</div></div>
+      <div class="st"><div class="stl">Mercancía Total</div><div class="stv" id="sm-${k}">—</div><div class="sts" id="sn-${k}">—</div></div>
+      <div class="st"><div class="stl">SAC Total Cobrado</div><div class="stv sac-val" id="ss-${k}">—</div><div class="sts" id="sd-${k}">—</div></div>
+      <div class="st"><div class="stl">Costo Prom. / Pedido</div><div class="stv" id="sa-${k}">—</div><div class="sts" id="sk-${k}">—</div></div>
+    </div>
+    <div class="ban off" id="ban-${k}"><span class="bp" id="bpct-${k}">—</span><span id="btxt-${k}">Captura datos para calcular</span></div>
+    <div class="cg">
+      <div class="card">
+        <div class="card-title">💰 Costos fijos del viaje</div>
+        <div class="cr"><span class="cn">👷 Personal (día completo)</span><span class="ca" id="cfp-${k}">—</span></div>
+        <div class="cr"><span class="cn">🚛 Deterioro camión</span><span class="ca" id="cfd-${k}">—</span></div>
+        <div class="cr"><span class="cn">🛣️ Casetas <input type="number" id="cask-${k}" min="0" step="10" style="width:82px;display:inline-block;margin-left:.4rem"></span><span class="ca" id="cfc-${k}">—</span></div>
+        <div class="cr"><span class="cn">🍽️ Viáticos</span><span class="ca" id="cfv-${k}">—</span></div>
+        <div class="cr ct"><span class="cn">Total fijos del viaje</span><span class="ca" id="cft-${k}" style="color:${d.color}">—</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Costo marginal promedio / pedido</div>
+        <div class="cr"><span class="cn">🛢️ Diesel (tramo propio)</span><span class="ca" id="cmd-${k}">—</span></div>
+        <div class="cr"><span class="cn">👷 Personal (÷ pedidos)</span><span class="ca" id="cmp-${k}">—</span></div>
+        <div class="cr"><span class="cn">🚛 Deterioro (÷ pedidos)</span><span class="ca" id="cmdt-${k}">—</span></div>
+        <div class="cr"><span class="cn">🛣️ Casetas (÷ pedidos)</span><span class="ca" id="cmc-${k}">—</span></div>
+        <div class="cr"><span class="cn">🍽️ Viáticos (÷ pedidos)</span><span class="ca" id="cmv-${k}">—</span></div>
+        <div class="cr ct"><span class="cn">Promedio / pedido</span><span class="ca" id="cmt-${k}" style="color:${d.color}">—</span></div>
+      </div>
+    </div>
+    <div class="stitle">Pedidos en la ruta</div>
+    <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;flex-wrap:wrap">
+      <span style="font-family:var(--mono);font-size:.68rem;color:var(--muted)">Km regreso a CEDIS:</span>
+      <input type="number" id="kmv-${k}" value="${d.kmV}" min="0" step="1" style="width:85px">
+      <span style="font-family:var(--mono);font-size:.68rem;color:var(--muted)">km</span>
+    </div>
+    <div class="tw"><table>
+      <thead><tr>
+        <th>#</th><th>Cliente / Pedido</th><th style="text-align:center">Activo</th>
+        <th class="r">Km tramo</th><th class="r">Mercancía $</th>
+        <th class="r">SAC $</th><th class="r">Total c/SAC</th>
+        <th style="text-align:center">Piso entrega</th>
+        <th class="r">Costo pedido</th><th class="r">% Costo/Merc</th><th>Semáforo ind.</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <div class="ibox info" style="margin-bottom:1.1rem">
+      ⭐ <strong>El resultado global de la ruta (arriba) determina si conviene el viaje.</strong>
+      El semáforo individual es referencia para identificar pedidos costosos. SAC = cobro al cliente por seguro foráneo.
+    </div>
+    <div class="stitle">⚖️ Comparativa KASSEL vs TRAMUSA</div>
+    <div class="comp-grid">
+      <div class="comp-card kassel">
+        <div class="comp-brand" style="color:#3b82f6">🏢 KASSEL</div>
+        <div class="cr"><span class="cn">Costo operativo ruta</span><span class="ca" id="kco-${k}">—</span></div>
+        <div class="cr"><span class="cn">SAC total cobrado</span><span class="ca sac-val" id="ks-${k}">—</span></div>
+        <div class="cr"><span class="cn">Pisos (KASSEL asume todos)</span><span class="ca" id="kp-${k}" style="font-size:.72rem;color:var(--muted)">—</span></div>
+        <div class="cr ct"><span class="cn">Costo total KASSEL</span><span class="ca comp-total" id="kt-${k}" style="color:#3b82f6">—</span></div>
+        <div id="kwin-${k}"></div>
+      </div>
+      <div class="comp-card tramusa">
+        <div class="comp-brand" style="color:#06b6d4">🚛 TRAMUSA</div>
+        <div class="cr"><span class="cn">% aplicado</span><span class="ca" id="tpct-${k}">—</span></div>
+        <div class="cr"><span class="cn">Mercancía total</span><span class="ca" id="tmerc-${k}">—</span></div>
+        <div class="cr"><span class="cn">Flete TRAMUSA</span><span class="ca" id="tflete-${k}">—</span></div>
+        <div class="cr" style="border-left:3px solid #3b82f6;padding-left:.5rem"><span class="cn" style="color:#93c5fd">🏢 Pisos que cubre KASSEL (1°–3°)</span><span class="ca" id="tkas-${k}" style="color:#93c5fd">—</span></div>
+        <div class="cr" style="border-left:3px solid #06b6d4;padding-left:.5rem"><span class="cn" style="color:#67e8f9">💳 Pisos extra cobrados al cliente (&gt;3°)</span><span class="ca" id="tp-${k}" style="color:#67e8f9">—</span></div>
+        <div class="cr ct"><span class="cn">Costo total TRAMUSA</span><span class="ca comp-total" id="tt-${k}" style="color:#06b6d4">—</span></div>
+        <div id="twin-${k}"></div>
+      </div>
+    </div>
+    <div id="verdict-${k}" class="ibox info" style="margin-bottom:1.1rem"></div>
+    <div class="stitle">Efecto del costo marginal — ahorro al agregar pedidos</div>
+    <div class="sg" id="sens-${k}"></div>`;
+
+  // Sync casetas inline
+  const ci=$('cask-'+k),cm=$('cas-'+k);
+  ci.value=cm.value;
+  ci.addEventListener('input',()=>{cm.value=ci.value;recalcAll();});
+  cm.addEventListener('input',()=>{ci.value=cm.value;});
+}
+
+// ══════════════════════════════════════════
+// UPDATE PANEL
+// ══════════════════════════════════════════
+function updatePanel(k){
+  const d=DESTS[k], r=compute(k), p=r.p, col=d.color;
+  const piso_cost=pn('tra-piso');
+
+  // subtitle
+  const actIdx=r.peds.map((x,i)=>x.act?`P${i+1}`:null).filter(Boolean);
+  $('sub-'+k).textContent=`CEDIS → ${actIdx.join(' → ')||'—'} → CEDIS  |  ${r.n} pedido${r.n!==1?'s':''} activo${r.n!==1?'s':''}  |  ${fmtN(r.kmTotal)} km`;
+
+  // semáforo
+  const sbig=$('sbig-'+k);
+  if(r.pctRuta!=null){
+    const cls=semCls(r.pctRuta,p.u1/100,p.u2/100);
+    sbig.className='sb '+cls;
+    $('spct-'+k).textContent=(r.pctRuta*100).toFixed(2)+'%';
+    $('slbl-'+k).textContent=semTxt(cls);
+  } else {
+    sbig.className='sb off';
+    $('spct-'+k).textContent='—';
+    $('slbl-'+k).textContent='Sin datos';
+  }
+
+  // stats
+  $('sc-'+k).textContent=fmt(r.costoRuta);
+  $('sm-'+k).textContent=fmt(r.mercTotal);
+  $('sn-'+k).textContent=`${r.n} pedido${r.n!==1?'s':''} activo${r.n!==1?'s':''}`;
+  $('ss-'+k).textContent=fmt(r.sacTotal);
+  $('sd-'+k).textContent=`$599 base → ver tabla SAC`;
+  $('sa-'+k).textContent=r.n>0?fmt(r.costoRuta/r.n):'—';
+  $('sk-'+k).textContent=`${fmtN(r.kmTotal)} km totales`;
+
+  // banner
+  const ban=$('ban-'+k);
+  if(r.pctRuta!=null){
+    const cls=semCls(r.pctRuta,p.u1/100,p.u2/100);
+    ban.className='ban '+cls;
+    const ps=(r.pctRuta*100).toFixed(2)+'%';
+    $('bpct-'+k).textContent=ps;
+    $('btxt-'+k).textContent=cls==='ok'?`✅ RUTA ÓPTIMA — Conviene hacer el viaje (${ps} del valor de mercancía)`:
+      cls==='ev'?`⚠️ EVALUAR — Revisar si el volumen justifica el viaje (${ps})`:`❌ NO CONVIENE — Costo alto vs valor de mercancía (${ps})`;
+  } else {
+    ban.className='ban off';
+    $('bpct-'+k).textContent='—';
+    $('btxt-'+k).textContent='Captura datos para calcular';
+  }
+
+  // fixed costs
+  const cas=pn('cas-'+k);
+  const viat=pn('viat-'+k)||p.viaticos;
+  $('cfp-'+k).textContent=fmt(r.personal);
+  $('cfd-'+k).textContent=fmt(r.deterioro);
+  $('cfc-'+k).textContent=fmt(cas);
+  $('cfv-'+k).textContent=fmt(viat);
+  $('cft-'+k).textContent=fmt(r.personal+r.deterioro+cas+viat);
+
+  // marginal avg
+  if(r.n>0){
+    const avgD=r.pedRes.reduce((s,x)=>s+x.diesel,0)/r.n;
+    $('cmd-'+k).textContent=fmt(avgD);
+    $('cmp-'+k).textContent=fmt(r.personal/r.n);
+    $('cmdt-'+k).textContent=fmt(r.deterioro/r.n);
+    $('cmc-'+k).textContent=fmt(cas/r.n);
+    $('cmv-'+k).textContent=fmt(viat/r.n);
+    $('cmt-'+k).textContent=fmt(r.costoRuta/r.n);
+  } else {
+    ['cmd','cmp','cmdt','cmc','cmv','cmt'].forEach(x=>$(x+'-'+k).textContent='—');
+  }
+
+  // pedido rows
+  let ri=0;
+  r.peds.forEach((ped,i)=>{
+    const tr=$('tr-'+k+i);
+    if(!ped.act){
+      tr.className='off';
+      ['sac-v','tot-v','cp','pp'].forEach(x=>$(x+'-'+k+i).textContent='—');
+      $('ps-'+k+i).innerHTML='<span class="tag off">—</span>';
+      return;
+    }
+    tr.className='';
+    const pr=r.pedRes[ri++]; if(!pr)return;
+    $('sac-v-'+k+i).textContent=fmt(pr.sac);
+    $('tot-v-'+k+i).textContent=fmt(pr.merc+pr.sac);
+    $('cp-'+k+i).textContent=fmt(pr.total);
+    if(pr.pctMerc!=null){
+      const cls=semCls(pr.pctMerc,p.u1/100,p.u2/100);
+      $('pp-'+k+i).textContent=(pr.pctMerc*100).toFixed(2)+'%';
+      $('ps-'+k+i).innerHTML=`<span class="tag ${cls}">${semTxt(cls)}</span>`;
+    } else {
+      $('pp-'+k+i).textContent='—';
+      $('ps-'+k+i).innerHTML='<span class="tag off">—</span>';
+    }
+  });
+
+  // COMPARATIVA KASSEL vs TRAMUSA
+  // KASSEL: asume 100% del costo de pisos sin importar cuántos — nunca cobra pisos al cliente
+  const kassKop=r.costoRuta;
+  const kassKsac=r.sacTotal;
+  const kassTotal=kassKop; // $0 por pisos siempre
+
+  // TRAMUSA pisos: KASSEL cubre del 1° al 3° ($500 c/piso). Cliente paga del 4° en adelante.
+  // Ej: piso 8 → KASSEL cubre 3 pisos=$1,500 / cliente paga 5 pisos=$2,500
+  let traKasselCubre=0, traPisoClienteExtra=0;
+  r.pedRes.forEach(pr=>{
+    const pisosKassel=Math.min(pr.piso,3);   // máx 3 pisos que cubre KASSEL
+    const pisosCliente=Math.max(pr.piso-3,0); // pisos >3 van al cliente
+    traKasselCubre+=pisosKassel*piso_cost;
+    traPisoClienteExtra+=pisosCliente*piso_cost;
+  });
+  const traFleteBase=r.traCosto;
+  const traTotalCliente=traFleteBase+traPisoClienteExtra; // flete + lo que paga cliente por pisos
+
+  $('kco-'+k).textContent=fmt(kassKop);
+  $('ks-'+k).textContent=fmt(kassKsac);
+  $('kp-'+k).textContent='$0 — KASSEL asume todos los pisos';
+  $('kt-'+k).textContent=fmt(kassTotal);
+  $('tpct-'+k).textContent=(r.traPct*100).toFixed(0)+'%';
+  $('tmerc-'+k).textContent=fmt(r.mercTotal);
+  $('tflete-'+k).textContent=fmt(traFleteBase);
+  $('tkas-'+k).textContent=traKasselCubre>0?fmt(traKasselCubre):'$0.00 (todos ≤ 3er piso)';
+  $('tp-'+k).textContent=traPisoClienteExtra>0?fmt(traPisoClienteExtra):'$0.00';
+  $('tt-'+k).textContent=fmt(traTotalCliente);
+
+  // winner — comparar costo KASSEL vs lo que pagaría el cliente con TRAMUSA (flete + pisos extra)
+  const diff=kassTotal-traTotalCliente;
+  const absDiff=Math.abs(diff);
+  let kwinH='', twinH='', verdictH='';
+  if(r.mercTotal===0){
+    verdictH='<span style="color:var(--muted)">Captura datos para comparar</span>';
+  } else if(absDiff<50){
+    kwinH='<div class="comp-winner equal">≈ Similar costo</div>';
+    twinH='<div class="comp-winner equal">≈ Similar costo</div>';
+    verdictH=`<strong>Costos muy similares</strong> — diferencia de ${fmt(absDiff)}. Considera factores como tiempo de entrega y servicio al cliente.`;
+  } else if(kassTotal<traTotalCliente){
+    kwinH='<div class="comp-winner kassel">🏆 MÁS ECONÓMICO</div>';
+    verdictH=`✅ <strong>KASSEL es más económico</strong> por ${fmt(absDiff)}. Costo KASSEL: ${fmt(kassTotal)} vs cliente pagaría ${fmt(traTotalCliente)} con TRAMUSA${traPisoClienteExtra>0?' (incluye '+fmt(traPisoClienteExtra)+' de pisos extra cobrados al cliente)':''}.`;
+  } else {
+    twinH='<div class="comp-winner tramusa">🏆 MÁS ECONÓMICO</div>';
+    verdictH=`🚛 <strong>TRAMUSA es más económica</strong> por ${fmt(absDiff)}. Costo KASSEL: ${fmt(kassTotal)} vs cliente pagaría ${fmt(traTotalCliente)} con TRAMUSA${traPisoClienteExtra>0?' (incluye '+fmt(traPisoClienteExtra)+' de pisos extra cobrados al cliente)':''}.`;
+  }
+  $('kwin-'+k).innerHTML=kwinH;
+  $('twin-'+k).innerHTML=twinH;
+  $('verdict-'+k).innerHTML=verdictH;
+
+  // sensitivity
+  const sg=$('sens-'+k); sg.innerHTML='';
+  const fijos=r.personal+r.deterioro+cas+viat;
+  const dslTot=r.pedRes.reduce((s,x)=>s+x.diesel,0)||0;
+  const base1=fijos+dslTot;
+  for(let n=1;n<=12;n++){
+    const cost=fijos/n+dslTot/n;
+    const isCur=n===r.n;
+    const c=document.createElement('div');
+    c.className='sc'+(isCur?' cur':'');
+    if(isCur)c.style.borderColor=col;
+    const save=n===1?null:Math.round(base1-cost);
+    c.innerHTML=`<div class="sn">${n} ped${n>1?'s':''}</div>
+      <div class="sv" style="color:${isCur?col:'var(--text)'}">${fmt(cost)}</div>
+      ${save!=null?`<div class="ss">-${fmt(Math.abs(save)).replace('$','')} vs 1</div>`:'<div class="ss" style="color:var(--muted)">base</div>'}`;
+    sg.appendChild(c);
+  }
+}
+
+// ══════════════════════════════════════════
+// RESUMEN
+// ══════════════════════════════════════════
+function updateResumen(){
+  const p=gp();
+  const results=Object.entries(DESTS).map(([k,d])=>({k,d,r:compute(k)}));
+  const rc=$('res-cards'); rc.innerHTML='';
+  const theme=isDark();
+  results.forEach(({k,d,r})=>{
+    const cls=r.pctRuta!=null?semCls(r.pctRuta,p.u1/100,p.u2/100):'off';
+    const c=document.createElement('div');
+    c.className='rc';
+    c.style.background=theme?d.bg:d.bgl;
+    c.style.borderColor=theme?d.bd:d.bdl;
+    c.innerHTML=`<div class="rd" style="color:${d.color}">${d.emoji} ${d.name}</div>
+      <div class="rv" style="color:${d.color}">${r.n>0?fmt(r.costoRuta/r.n):'—'}</div>
+      <div class="rsub">promedio / pedido</div>
+      <div class="rsub">${r.n} pedido${r.n!==1?'s':''} · ${fmtN(r.kmTotal)} km</div>
+      <div class="rsub">Mercancía: ${fmt(r.mercTotal)}</div>
+      <div class="rsub">TRAMUSA: ${fmt(r.traCosto)} (${(r.traPct*100).toFixed(0)}%)</div>
+      <div style="margin-top:.4rem"><span class="tag ${cls}">${r.pctRuta!=null?(r.pctRuta*100).toFixed(2)+'% '+semTxt(cls):'Sin datos'}</span></div>`;
+    rc.appendChild(c);
+  });
+  const rb=$('res-bars'); rb.innerHTML='';
+  const sorted=[...results].filter(x=>x.r.pctRuta!=null).sort((a,b)=>a.r.pctRuta-b.r.pctRuta);
+  const maxP=Math.max(...sorted.map(x=>x.r.pctRuta),0.12);
+  sorted.forEach(({k,d,r})=>{
+    const cls=semCls(r.pctRuta,p.u1/100,p.u2/100);
+    const icon=cls==='ok'?'✅':cls==='ev'?'⚠️':'❌';
+    const row=document.createElement('div'); row.className='br';
+    row.innerHTML=`<div class="bl">${d.emoji} ${d.name}</div>
+      <div class="bt"><div class="bf" style="width:${Math.min(r.pctRuta/maxP*100,100)}%;background:${d.color}"><span>${(r.pctRuta*100).toFixed(2)}%</span></div></div>
+      <div class="bpct">${icon}</div>`;
+    rb.appendChild(row);
+  });
+  $('res-params').innerHTML=`
+    <div class="card"><div class="card-title">🛢️ Diesel / 📦 SAC</div>
+      <div class="pr"><span class="pl">Diesel/L</span><span style="font-family:var(--mono);font-size:.78rem">${fmt(p.diesel)}</span></div>
+      <div class="pr"><span class="pl">Rendimiento</span><span style="font-family:var(--mono);font-size:.78rem">${p.rend} km/L</span></div>
+      <div class="pr"><span class="pl">SAC ≤$10k</span><span class="sac-val">${fmt(pn('sac-1'))}</span></div>
+      <div class="pr"><span class="pl">SAC $10-$20k</span><span class="sac-val">${fmt(pn('sac-2'))}</span></div>
+      <div class="pr"><span class="pl">SAC $20-$60k</span><span class="sac-val">${fmt(pn('sac-3'))}</span></div>
+      <div class="pr"><span class="pl">SAC $60-$80k</span><span class="sac-val">${fmt(pn('sac-4'))}</span></div>
+      <div class="pr"><span class="pl">SAC &gt;$80k</span><span class="sac-val">${fmt(pn('sac-5'))}</span></div>
+    </div>
+    <div class="card"><div class="card-title">👷 Personal / 🚛 Camión</div>
+      <div class="pr"><span class="pl">Chofer/día</span><span style="font-family:var(--mono);font-size:.78rem">${fmt(p.chofer)}</span></div>
+      <div class="pr"><span class="pl">Ayud.1/día</span><span style="font-family:var(--mono);font-size:.78rem">${fmt(p.ay1)}</span></div>
+      <div class="pr"><span class="pl">Ayud.2/día</span><span style="font-family:var(--mono);font-size:.78rem">${fmt(p.ay2)}</span></div>
+      <div class="pr"><span class="pl">Total/día</span><span style="font-family:var(--mono);font-size:.78rem">${fmt(calcPers(p))}</span></div>
+      <div class="pr"><span class="pl">Umbral óptimo</span><span style="font-family:var(--mono);font-size:.78rem">≤ ${p.u1}%</span></div>
+      <div class="pr"><span class="pl">Umbral máximo</span><span style="font-family:var(--mono);font-size:.78rem">≤ ${p.u2}%</span></div>
+    </div>
+    <div class="card"><div class="card-title">🛣️ Casetas / 🚛 TRAMUSA %</div>
+      ${Object.entries(DESTS).map(([k,d])=>`
+        <div class="pr"><span class="pl">${d.emoji} ${d.name}</span>
+          <span style="font-family:var(--mono);font-size:.78rem">Cas: ${fmt(pn('cas-'+k))} · TRA: ${pn('tra-'+k)}%</span>
+        </div>`).join('')}
+    </div>`;
+}
+
+function recalcAll(){Object.keys(DESTS).forEach(k=>updatePanel(k));updateResumen();}
+
+// ══════════════════════════════════════════
+// LOCALSTORAGE — guardar y restaurar datos
+// ══════════════════════════════════════════
+const LS_KEY='kassel_rutas_v1';
+
+function saveData(){
+  const data={};
+  // Guardar todos los inputs y selects del documento
+  document.querySelectorAll('input[id], select[id]').forEach(el=>{
+    if(el.type==='checkbox') data[el.id]=el.checked;
+    else data[el.id]=el.value;
+  });
+  try{ localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch(e){}
+}
+
+function loadData(){
+  let data;
+  try{ data=JSON.parse(localStorage.getItem(LS_KEY)); } catch(e){ return false; }
+  if(!data) return false;
+  Object.entries(data).forEach(([id,val])=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    if(el.type==='checkbox') el.checked=!!val;
+    else el.value=val;
+  });
+  return true;
+}
+
+Object.keys(DESTS).forEach(k=>buildPanel(k));
+
+// Cargar datos guardados antes de recalcular
+const loaded=loadData();
+// Sync casetas inline después de cargar
+Object.keys(DESTS).forEach(k=>{
+  const ci=$('cask-'+k), cm=$('cas-'+k);
+  if(ci&&cm) ci.value=cm.value;
+});
+recalcAll();
+
+// Guardar en cada cambio
+document.addEventListener('input', ()=>{ recalcAll(); saveData(); });
+document.addEventListener('change', ()=>{ recalcAll(); saveData(); });
+
+// Botón limpiar datos (por si se necesita resetear)
+const clearBtn=document.createElement('button');
+clearBtn.className='theme-btn';
+clearBtn.textContent='🗑️ Limpiar datos';
+clearBtn.style.marginLeft='.5rem';
+clearBtn.addEventListener('click',()=>{
+  if(confirm('¿Borrar todos los datos guardados y volver a los valores por defecto?')){
+    localStorage.removeItem(LS_KEY);
+    location.reload();
+  }
+});
+document.querySelector('nav').appendChild(clearBtn);
+
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    $('panel-'+btn.dataset.t).classList.add('active');
+    if(btn.dataset.t==='res'){
+      setTimeout(()=>{
+        document.querySelectorAll('.bf').forEach(b=>{const w=b.style.width;b.style.width='0';requestAnimationFrame(()=>requestAnimationFrame(()=>b.style.width=w));});
+      },50);
+    }
+  });
+});
+</script>
+</body>
+</html>
